@@ -57,7 +57,9 @@
           float age = dp.z;
           float front = age * 0.09;                // quarter-size expansion
           float band = r - front;
-          float fade = exp(-age * 1.6) * smoothstep(0.0, 0.02, front);
+          // ease in slowly so a freshly-born ripple starts almost invisible,
+          // then gently fade out as it expands
+          float fade = smoothstep(0.0, 0.55, age) * exp(-age * 1.4);
           // bipolar wavelet: dark trough just inside, bright crest just outside
           // narrow band = a thin, crisp ring edge
           float ring = (-band) * exp(-band * band * 16000.0) * 300.0 * fade;
@@ -76,8 +78,8 @@
         vec2 dM = uv - uMouse / uRes.xy; dM.x *= aspect;
         float light = exp(-length(dM) * 3.4) * 0.05 * uStr;
 
-        // ripple edge highlight: thin crisp ring, gentle tone so it blends in
-        float ripLight = edge * 0.07;
+        // ripple edge highlight: thin crisp ring, very faint — barely perceptible
+        float ripLight = edge * 0.045;
 
         float c = base + light + ripLight;
 
