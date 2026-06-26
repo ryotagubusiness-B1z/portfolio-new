@@ -205,15 +205,20 @@ section { padding: var(--pad); }
   font-size: clamp(2.6rem, 11.5vw, 11rem); line-height: 0.86; letter-spacing: -0.035em;
 }
 .kinetic__layer { display: block; }
-.kinetic__layer span { display: block; }
-.kinetic__layer--main span {
+.kinetic__layer > span { display: block; }
+.kinetic__layer--main > span {
   transform: translateY(110%); opacity: 0;
   transition: transform 1.1s var(--ease), opacity 1.1s var(--ease);
 }
-.loaded .kinetic__layer--main span { transform: translateY(0); opacity: 1; }
-.kinetic__layer--main span:nth-child(1){transition-delay:.40s}
-.kinetic__layer--main span:nth-child(2){transition-delay:.50s}
-.kinetic__layer--main span:nth-child(3){transition-delay:.60s}
+.loaded .kinetic__layer--main > span { transform: translateY(0); opacity: 1; }
+.kinetic__layer--main > span:nth-child(1){transition-delay:.40s}
+.kinetic__layer--main > span:nth-child(2){transition-delay:.50s}
+.kinetic__layer--main > span:nth-child(3){transition-delay:.60s}
+/* per-letter hover wave */
+.kinetic .char {
+  display: inline-block; will-change: transform;
+  transition: transform .4s cubic-bezier(0.16, 1, 0.3, 1);
+}
 /* ghost layer drifts behind, creating the double-exposure motion */
 .kinetic__layer--ghost {
   position: absolute; inset: 0; color: transparent;
