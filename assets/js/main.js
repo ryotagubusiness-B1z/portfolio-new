@@ -24,7 +24,8 @@
       uniform vec2  uRes;
       uniform float uTime;
       uniform vec2  uMouse;     // trailing cursor, pixels
-      uniform float uStr;       // cursor light influence
+      uniform float uStr;       // cursor influence
+      uniform float uRadius;    // attraction radius (fraction of viewport height = 2cm)
       uniform vec3  uDrops[${N}]; // x,y pixels ; z = age in seconds (<0 = inactive)
 
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -66,12 +67,13 @@
         }
         push *= 0.004;                             // super-subtle ripple displacement
 
-        // ---- gentle attraction: smoke + grain are drawn toward the cursor ----
+        // ---- gentle attraction within a ~2cm radius around the cursor ----
         vec2 m = uMouse / uRes.xy;
         vec2 dM = uv - m; dM.x *= aspect;
         float distM = length(dM);
-        // sampling farther out near the cursor pulls the particles inward (gather)
-        vec2 attract = (uv - m) * exp(-distM * 4.2) * 0.16 * (0.55 + 0.45 * uStr);
+        // gaussian confined to uRadius (= 2cm); sampling outward pulls particles in
+        float pull = exp(-(distM * distM) / (uRadius * uRadius));
+        vec2 attract = (uv - m) * pull * 0.26 * (0.55 + 0.45 * uStr);
 
         vec2 total = push + attract;
 
@@ -114,7 +116,10 @@
     const uTime = gl.getUniformLocation(prog, "uTime");
     const uMouse = gl.getUniformLocation(prog, "uMouse");
     const uStr = gl.getUniformLocation(prog, "uStr");
+    const uRadius = gl.getUniformLocation(prog, "uRadius");
     const uDrops = gl.getUniformLocation(prog, "uDrops");
+
+    const CM_PX = 37.795; // 1cm in CSS pixels (96dpi)
 
     const DPR = Math.min(devicePixelRatio || 1, 1.5);
     let W = 0, H = 0;
@@ -175,6 +180,7 @@
       gl.uniform1f(uTime, nowT);
       gl.uniform2f(uMouse, mx, my);
       gl.uniform1f(uStr, str);
+      gl.uniform1f(uRadius, (2.0 * CM_PX) / innerHeight); // 2cm as fraction of height
       gl.uniform3fv(uDrops, drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       requestAnimationFrame(render);
