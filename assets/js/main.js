@@ -91,8 +91,8 @@
         vec2 sp = (m + rot) + attract * ring * 0.4;   // cursor swirl + slight pull
         float t = uTime * 0.05;
         // irregular, slowly drifting blob — mostly black, only a little emerges
-        float bn = fbm(sp * 1.9 + vec2(t * 0.6, -t * 0.4));
-        float blob = smoothstep(0.58, 0.97, bn);
+        float bn = fbm(sp * 1.7 + vec2(t * 0.6, -t * 0.4));
+        float blob = smoothstep(0.42, 0.82, bn);
 
         // the bright area is granular: a field of fine particles (pushed by the cursor)
         vec2 gp = frag + (push + attract) * uRes.y;
