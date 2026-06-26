@@ -87,19 +87,23 @@
         vec2 rot = vec2(rel.x * ca - rel.y * sa, rel.x * sa + rel.y * ca);
         rot.x /= aspect;
 
-        // ---- flowing smoke (slow black/white movement) ----
-        vec2 sp = (m + rot) + attract * ring * 0.4; // swirl + slight inward draw, confined
+        // ---- background: an irregular blob faintly emerging, made of particles ----
+        vec2 sp = (m + rot) + attract * ring * 0.4;   // cursor swirl + slight pull
         float t = uTime * 0.05;
-        float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
-        float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
-        float base = mix(0.015, 0.19, n);
+        // irregular, slowly drifting blob — mostly black, only a little emerges
+        float bn = fbm(sp * 1.9 + vec2(t * 0.6, -t * 0.4));
+        float blob = smoothstep(0.58, 0.97, bn);
 
-        float c = base;                            // no glow — purely displacement
-
-        // film grain — fine particles dragged toward the cursor (within the radius)
+        // the bright area is granular: a field of fine particles (pushed by the cursor)
         vec2 gp = frag + (push + attract) * uRes.y;
-        float g = hash(floor(gp) + floor(uTime * 8.0) * vec2(1.3, 1.7));
-        c += (g - 0.5) * 0.05;
+        float pa = hash(floor(gp / 2.0) + floor(uTime * 4.0) * vec2(1.3, 1.7));
+        pa = smoothstep(0.5, 0.97, pa);
+
+        float c = 0.012;                              // near-black field
+        c += blob * (0.05 + 0.9 * pa) * 0.55;         // white particles only inside the blob
+
+        // very faint grain so the black isn't dead flat
+        c += (hash(frag + fract(uTime) * 90.0) - 0.5) * 0.014;
 
         gl_FragColor = vec4(vec3(clamp(c, 0.0, 1.0)), 1.0);
       }`;
