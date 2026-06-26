@@ -100,10 +100,21 @@
         float tw = 0.5 + 0.5 * sin(uTime * 2.5 + ph * 6.2831); // smooth twinkle (no stepping/lag)
         float pa = step(0.6, ph) * tw;                // sparse fine particles
 
-        float c = 0.012;                              // near-black field
-        c += blob * (0.05 + 0.95 * pa) * 0.55;        // white particles only inside the blob
+        // ---- premium colour aurora (Apple-display wallpaper feel) ----
+        float fa = fbm(uv * 1.1 + vec2(t * 0.5, t * 0.25));
+        float fb = fbm(uv * 0.9 + vec2(-t * 0.35, t * 0.4));
+        vec3 cA = vec3(0.11, 0.15, 0.46);   // deep indigo
+        vec3 cB = vec3(0.40, 0.18, 0.55);   // violet
+        vec3 cC = vec3(0.09, 0.42, 0.55);   // teal
+        vec3 aurora = mix(cA, cB, smoothstep(0.25, 0.75, fa));
+        aurora = mix(aurora, cC, smoothstep(0.45, 0.90, fb));
 
-        gl_FragColor = vec4(vec3(clamp(c, 0.0, 1.0)), 1.0);
+        float lum = blob * (0.05 + 0.95 * pa);        // particle brightness inside the blob
+        vec3 outc = vec3(0.012);                      // near-black base
+        outc += aurora * lum * 0.95;                  // coloured particles
+        outc += aurora * blob * 0.06;                 // faint ambient colour in the blob
+
+        gl_FragColor = vec4(clamp(outc, 0.0, 1.0), 1.0);
       }`;
 
     const compile = (type, src) => {
