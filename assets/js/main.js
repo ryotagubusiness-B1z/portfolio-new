@@ -9,20 +9,23 @@
   const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const lerp = (a, b, n) => a + (b - a) * n;
 
-  /* ---------- WebGL background: smoke + grain + cursor ripple ---------- */
+  /* ---------- WebGL background: smoke + grain + water-drop ripples ---------- */
   function initBackground() {
     const canvas = document.getElementById("bgfx");
     if (!canvas || reduce) { document.documentElement.style.background = "#000"; return; }
     const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
     if (!gl) { document.documentElement.style.background = "#000"; return; }
 
+    const N = 14; // max concurrent ripples
+
     const vert = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
     const frag = `
       precision highp float;
       uniform vec2  uRes;
       uniform float uTime;
-      uniform vec2  uMouse;   // pixels (trailing)
-      uniform float uStr;     // cursor influence 0..1
+      uniform vec2  uMouse;     // trailing cursor, pixels
+      uniform float uStr;       // cursor light influence
+      uniform vec3  uDrops[${N}]; // x,y pixels ; z = age in seconds (<0 = inactive)
 
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p){
@@ -37,32 +40,49 @@
         for(int i = 0; i < 5; i++){ v += a * noise(p); p *= 2.02; a *= 0.5; }
         return v;
       }
+
       void main(){
-        vec2 uv = gl_FragCoord.xy / uRes.xy;
+        vec2 frag = gl_FragCoord.xy;
+        vec2 uv = frag / uRes.xy;
         float aspect = uRes.x / uRes.y;
-        vec2 m = uMouse / uRes.xy;
 
-        // ripple distortion radiating from the cursor
-        vec2 d = uv - m; d.x *= aspect;
-        float dist = length(d);
-        float ripple = sin(dist * 22.0 - uTime * 3.0) * exp(-dist * 6.0) * 0.03 * uStr;
-        vec2 sp = uv + (d / (dist + 1e-4)) * ripple;
+        // ---- water-drop ripples: a thin expanding ring (the EDGE) ----
+        vec2  disp  = vec2(0.0);  // radial refraction offset (uv space)
+        float edge  = 0.0;        // bright ring edge
+        for (int i = 0; i < ${N}; i++) {
+          vec3 dp = uDrops[i];
+          if (dp.z < 0.0) continue;
+          vec2 rel = (frag - dp.xy) / uRes.y;      // aspect-correct, normalized by height
+          float r = length(rel);
+          float age = dp.z;
+          float front = age * 0.09;                // quarter-size expansion
+          float band = r - front;
+          float fade = exp(-age * 1.6) * smoothstep(0.0, 0.02, front);
+          // bipolar wavelet: dark trough just inside, bright crest just outside
+          // -> a crisp light/dark EDGE rather than a soft glow
+          float ring = (-band) * exp(-band * band * 7000.0) * 200.0 * fade;
+          edge += ring;                            // sharp outline (signed)
+          disp += (rel / (r + 1e-4)) * ring * 0.012; // only a faint warp at the edge
+        }
 
-        // flowing smoke with domain warp (slow black/white movement)
+        // ---- flowing smoke (slow black/white movement) ----
+        vec2 sp = uv + disp;
         float t = uTime * 0.05;
         float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
         float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
         float base = mix(0.015, 0.19, n);
 
-        // soft cursor light reveals the smoke
-        float light = exp(-dist * 2.6) * 0.28 * uStr;
-        // concentric brightness rings = the visible ripple
-        float rings = sin(dist * 22.0 - uTime * 3.0) * exp(-dist * 4.5) * 0.06 * uStr;
+        // soft cursor light reveals the smoke (subtle, calm)
+        vec2 dM = uv - uMouse / uRes.xy; dM.x *= aspect;
+        float light = exp(-length(dM) * 3.4) * 0.05 * uStr;
 
-        float c = base + light + rings;
+        // ripple edge highlight: crisp shape but low contrast so it blends in
+        float ripLight = edge * 0.14;
+
+        float c = base + light + ripLight;
 
         // film grain
-        float g = hash(gl_FragCoord.xy + fract(uTime) * 100.0);
+        float g = hash(frag + fract(uTime) * 100.0);
         c += (g - 0.5) * 0.05;
 
         gl_FragColor = vec4(vec3(clamp(c, 0.0, 1.0)), 1.0);
@@ -90,6 +110,7 @@
     const uTime = gl.getUniformLocation(prog, "uTime");
     const uMouse = gl.getUniformLocation(prog, "uMouse");
     const uStr = gl.getUniformLocation(prog, "uStr");
+    const uDrops = gl.getUniformLocation(prog, "uDrops");
 
     const DPR = Math.min(devicePixelRatio || 1, 1.5);
     let W = 0, H = 0;
@@ -100,25 +121,57 @@
     };
     resize(); addEventListener("resize", resize);
 
-    // mouse: trailing position + influence that fades when still
+    // ripple drops (ring buffer) — each spawns where the cursor passes
+    const LIFE = 2.4;                       // seconds before a ripple fully fades
+    const drops = new Float32Array(N * 3);  // x, y, age
+    const dropT0 = new Float32Array(N).fill(-100);
+    for (let i = 0; i < N; i++) drops[i * 3 + 2] = -1;
+    let di = 0, lastSX = -1e9, lastSY = -1e9, nowT = 0;
+
+    const spawn = (x, y) => {
+      drops[di * 3] = x; drops[di * 3 + 1] = y;
+      dropT0[di] = nowT;
+      di = (di + 1) % N;
+      lastSX = x; lastSY = y;
+    };
+
+    // cursor light follow
     let tmx = innerWidth / 2 * DPR, tmy = innerHeight / 2 * DPR;
-    let mx = tmx, my = tmy, str = 0, tStr = 0.5;
+    let mx = tmx, my = tmy, str = 0, tStr = 0.45;
+
     addEventListener("mousemove", (e) => {
-      tmx = e.clientX * DPR; tmy = (innerHeight - e.clientY) * DPR; // flip Y for GL
-      tStr = 1.0;
+      const x = e.clientX * DPR, y = (innerHeight - e.clientY) * DPR; // GL Y is flipped
+      tmx = x; tmy = y; tStr = 1.0;
+      // drop a new ripple once the cursor has travelled far enough
+      if (Math.hypot(x - lastSX, y - lastSY) > 26 * DPR) spawn(x, y);
     }, { passive: true });
+    // a deliberate click = a bigger single drop
+    addEventListener("pointerdown", (e) => {
+      spawn(e.clientX * DPR, (innerHeight - e.clientY) * DPR);
+    }, { passive: true });
+    // dev demo: auto-pulse ripples from centre (visit with ?demo)
+    if (location.search.indexOf("demo") !== -1) {
+      setInterval(() => spawn(W / 2, H * 0.28), 1700);
+    }
 
     let start = null;
     const render = (now) => {
       if (start === null) start = now;
-      const time = (now - start) / 1000;
+      nowT = (now - start) / 1000;
       mx = lerp(mx, tmx, 0.1); my = lerp(my, tmy, 0.1);
-      tStr = Math.max(0.5, tStr - 0.012); // decay influence toward idle floor
+      tStr = Math.max(0.45, tStr - 0.012);
       str = lerp(str, tStr, 0.08);
+
+      for (let i = 0; i < N; i++) {
+        const age = nowT - dropT0[i];
+        drops[i * 3 + 2] = (age >= 0 && age < LIFE) ? age : -1;
+      }
+
       gl.uniform2f(uRes, W, H);
-      gl.uniform1f(uTime, time);
+      gl.uniform1f(uTime, nowT);
       gl.uniform2f(uMouse, mx, my);
       gl.uniform1f(uStr, str);
+      gl.uniform3fv(uDrops, drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       requestAnimationFrame(render);
     };
