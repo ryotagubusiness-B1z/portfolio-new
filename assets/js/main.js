@@ -269,6 +269,42 @@
     });
   }
 
+  /* ---------- eased smooth scroll for in-page anchors ---------- */
+  function initSmoothScroll() {
+    if (reduce) return;
+    const easeInOutCubic = (t) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    document.querySelectorAll('a[href^="#"]').forEach((a) => {
+      a.addEventListener("click", (e) => {
+        const id = a.getAttribute("href");
+        if (!id || id === "#") return;
+        const target = id === "#top" ? document.body : document.querySelector(id);
+        if (!target) return;
+        e.preventDefault();
+
+        const startY = scrollY;
+        const endY = id === "#top"
+          ? 0
+          : target.getBoundingClientRect().top + scrollY;
+        const dist = endY - startY;
+        if (Math.abs(dist) < 2) return;
+
+        // duration scales with distance, but stays smooth & calm
+        const dur = Math.min(1600, Math.max(850, Math.abs(dist) * 0.7));
+        let start = null;
+        const step = (ts) => {
+          if (start === null) start = ts;
+          const p = Math.min(1, (ts - start) / dur);
+          scrollTo(0, startY + dist * easeInOutCubic(p));
+          if (p < 1) requestAnimationFrame(step);
+          else history.replaceState(null, "", id);
+        };
+        requestAnimationFrame(step);
+      });
+    });
+  }
+
   /* ---------- header hide on scroll ---------- */
   function initHeader() {
     const header = document.getElementById("header");
@@ -338,6 +374,7 @@
     initBackground();
     initCursor();
     initHeader();
+    initSmoothScroll();
     initDragTrack();
     initClock();
     runLoader(initReveal);

@@ -16,7 +16,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; background: var(--bg); }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); } /* smooth scroll handled in JS */
 html.is-locked { overflow: hidden; }
 
 /* WebGL background: flowing grayscale smoke + grain + cursor ripple */
