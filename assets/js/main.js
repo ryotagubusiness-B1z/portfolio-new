@@ -94,16 +94,14 @@
         float bn = fbm(sp * 1.7 + vec2(t * 0.6, -t * 0.4));
         float blob = smoothstep(0.42, 0.82, bn);
 
-        // the bright area is granular: a field of fine particles (pushed by the cursor)
+        // the bright area is granular: fine particles, cursor displaces them
         vec2 gp = frag + (push + attract) * uRes.y;
-        float pa = hash(floor(gp / 2.0) + floor(uTime * 4.0) * vec2(1.3, 1.7));
-        pa = smoothstep(0.5, 0.97, pa);
+        float ph = hash(floor(gp));                   // static per-pixel particle id (fine, 1px)
+        float tw = 0.5 + 0.5 * sin(uTime * 2.5 + ph * 6.2831); // smooth twinkle (no stepping/lag)
+        float pa = step(0.6, ph) * tw;                // sparse fine particles
 
         float c = 0.012;                              // near-black field
-        c += blob * (0.05 + 0.9 * pa) * 0.55;         // white particles only inside the blob
-
-        // very faint grain so the black isn't dead flat
-        c += (hash(frag + fract(uTime) * 90.0) - 0.5) * 0.014;
+        c += blob * (0.05 + 0.95 * pa) * 0.55;        // white particles only inside the blob
 
         gl_FragColor = vec4(vec3(clamp(c, 0.0, 1.0)), 1.0);
       }`;
