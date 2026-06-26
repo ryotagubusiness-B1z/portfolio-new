@@ -75,12 +75,20 @@
         float pull = exp(-(distM * distM) / (uRadius * uRadius));
         vec2 attract = (uv - m) * pull * 0.5 * (0.55 + 0.45 * uStr);
 
-        // clean-edged circular mask: the SMOKE only changes inside the 4cm circle,
-        // and is left completely untouched (no gooey warp) outside it
-        float ring = 1.0 - smoothstep(uRadius * 0.7, uRadius, distM);
+        // clean-edged circular mask: the SMOKE only responds inside the 4cm circle,
+        // and is left completely untouched outside it
+        float ring = 1.0 - smoothstep(uRadius * 0.72, uRadius, distM);
+
+        // refined response: the smoke slowly swirls + draws inward around the cursor
+        // (a gentle vortex for a premium, fluid feel)
+        vec2 rel = uv - m; rel.x *= aspect;
+        float ang = ring * (0.85 + 0.12 * sin(uTime * 0.5)); // soft, breathing vortex
+        float ca = cos(ang), sa = sin(ang);
+        vec2 rot = vec2(rel.x * ca - rel.y * sa, rel.x * sa + rel.y * ca);
+        rot.x /= aspect;
 
         // ---- flowing smoke (slow black/white movement) ----
-        vec2 sp = uv + attract * ring * 0.5;       // contained, gentle warp inside circle
+        vec2 sp = (m + rot) + attract * ring * 0.4; // swirl + slight inward draw, confined
         float t = uTime * 0.05;
         float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
         float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
