@@ -67,18 +67,20 @@
         }
         push *= 0.004;                             // super-subtle ripple displacement
 
-        // ---- gentle attraction within a ~2cm radius around the cursor ----
+        // ---- attraction within a ~4cm radius around the cursor ----
         vec2 m = uMouse / uRes.xy;
         vec2 dM = uv - m; dM.x *= aspect;
         float distM = length(dM);
-        // gaussian confined to uRadius (= 2cm); sampling outward pulls particles in
+        // gaussian pull, used for the grain particles
         float pull = exp(-(distM * distM) / (uRadius * uRadius));
         vec2 attract = (uv - m) * pull * 0.5 * (0.55 + 0.45 * uStr);
 
-        vec2 total = push + attract;
+        // clean-edged circular mask: the SMOKE only changes inside the 4cm circle,
+        // and is left completely untouched (no gooey warp) outside it
+        float ring = 1.0 - smoothstep(uRadius * 0.7, uRadius, distM);
 
         // ---- flowing smoke (slow black/white movement) ----
-        vec2 sp = uv + total * 0.7;
+        vec2 sp = uv + attract * ring * 0.5;       // contained, gentle warp inside circle
         float t = uTime * 0.05;
         float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
         float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
@@ -86,8 +88,8 @@
 
         float c = base;                            // no glow — purely displacement
 
-        // film grain — fine particles dragged toward the cursor
-        vec2 gp = frag + total * uRes.y;           // displace grain sampling (pixels)
+        // film grain — fine particles dragged toward the cursor (within the radius)
+        vec2 gp = frag + (push + attract) * uRes.y;
         float g = hash(floor(gp) + floor(uTime * 8.0) * vec2(1.3, 1.7));
         c += (g - 0.5) * 0.05;
 
