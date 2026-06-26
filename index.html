@@ -1,196 +1,152 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Ryota — Creative Developer & Designer. ポートフォリオ" />
-  <title>Ryota — Creative Developer</title>
+  <meta name="description" content="Ryota — Multi-Disciplinary Developer & Designer. Portfolio." />
+  <title>Ryota — Multi-Disciplinary Designer</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Manrope:wght@300;400;500;600&display=swap"
+    href="https://api.fontshare.com/v2/css?f[]=switzer@200,300,400,500,600,700&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-  <!-- grain + cursor + aurora -->
-  <div class="grain" aria-hidden="true"></div>
-  <div class="aurora" aria-hidden="true"></div>
-  <div class="cursor-dot" aria-hidden="true"></div>
-  <div class="cursor-ring" aria-hidden="true"><span>VIEW</span></div>
+  <!-- crosshair cursor (4 bars) -->
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor_top"></span>
+    <span class="cursor_bottom"></span>
+    <span class="cursor_left"></span>
+    <span class="cursor_right"></span>
+  </div>
 
   <!-- loader -->
-  <div class="loader" id="loader" aria-hidden="true">
-    <div class="loader__count"><span id="loaderNum">0</span><em>%</em></div>
-    <div class="loader__word">ATELIER</div>
+  <div class="loader" id="loader">
+    <div class="loader__name">
+      <span class="char">R</span><span class="char">Y</span><span class="char">O</span><span class="char">T</span><span class="char">A</span><span class="char">.</span>
+    </div>
+    <div class="loader__count"><span id="loaderNum">0</span>%</div>
   </div>
 
   <!-- header -->
-  <header class="nav" id="nav">
-    <a href="#top" class="nav__brand" data-cursor="link">
-      RYOTA<span>©</span>
-    </a>
-    <nav class="nav__links">
-      <a href="#work" data-cursor="link"><span>Work</span></a>
-      <a href="#about" data-cursor="link"><span>About</span></a>
-      <a href="#contact" data-cursor="link"><span>Contact</span></a>
+  <header class="header" id="header">
+    <a href="#top" class="header__brand" data-cursor>RYOTA<span>©</span></a>
+    <nav class="header__nav">
+      <a href="#projects" class="link-mask" data-cursor><span data-text="Projects">Projects</span></a>
+      <a href="#about" class="link-mask" data-cursor><span data-text="About">About</span></a>
     </nav>
-    <div class="nav__clock"><span id="clock">--:--</span> JST</div>
+    <div class="header__status"><i></i> Available for freelance</div>
+    <a href="#top" class="header__brand header__brand--touch" data-cursor>R K.</a>
   </header>
 
   <main id="top">
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hero__eyebrow reveal-line"><span>Creative Developer — Portfolio ’26</span></div>
-      <h1 class="hero__title">
-        <span class="line"><span class="word">Designing</span></span>
-        <span class="line"><span class="word">digital</span> <span class="word italic">experiences</span></span>
-        <span class="line"><span class="word">with</span> <span class="word">intention.</span></span>
+    <!-- 01 — HOME / HERO -->
+    <section class="home" id="home">
+      <div class="home__index">
+        <span>01</span><em>//</em><span>04</span>
+      </div>
+      <a href="#about" class="home__scroll" data-cursor>
+        <span>Scroll</span>
+        <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 4v15M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </a>
+
+      <h1 class="kinetic" aria-label="Multi-Disciplinary Developer">
+        <span class="kinetic__layer kinetic__layer--ghost" aria-hidden="true">
+          <span>Multi—</span><span>Disciplinary</span><span>Developer</span>
+        </span>
+        <span class="kinetic__layer kinetic__layer--main">
+          <span>Multi—</span><span>Disciplinary</span><span>Developer</span>
+        </span>
       </h1>
-      <div class="hero__meta">
-        <p class="reveal-line">
-          <span>東京を拠点に、ブランドと体験のためのウェブを設計・実装しています。
-          静けさのなかに緊張感のある、記憶に残るインターフェースを。</span>
-        </p>
-        <a href="#work" class="hero__scroll" data-cursor="link">
-          <span>Scroll</span>
-          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 4v16M6 14l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
-        </a>
-      </div>
+
+      <p class="home__caption">Designer &amp; front‑end developer based in Tokyo, building considered digital experiences.</p>
     </section>
 
-    <!-- MARQUEE -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee__track">
-        <span>Art Direction</span><i>✦</i>
-        <span>Web Design</span><i>✦</i>
-        <span>Frontend</span><i>✦</i>
-        <span>Interaction</span><i>✦</i>
-        <span>Branding</span><i>✦</i>
-        <span>Art Direction</span><i>✦</i>
-        <span>Web Design</span><i>✦</i>
-        <span>Frontend</span><i>✦</i>
-        <span>Interaction</span><i>✦</i>
-        <span>Branding</span><i>✦</i>
-      </div>
-    </div>
-
-    <!-- WORK -->
-    <section class="work" id="work">
-      <div class="section-head">
-        <span class="section-head__idx">01</span>
-        <h2 class="section-head__title reveal">Selected Work</h2>
-        <span class="section-head__note reveal">2023 — 2026</span>
-      </div>
-
-      <ul class="projects">
-        <li class="project" data-cursor="view">
-          <a href="#" class="project__inner">
-            <span class="project__idx">/01</span>
-            <h3 class="project__title">Lumen Studio</h3>
-            <span class="project__tag">Brand · Web</span>
-            <div class="project__thumb">
-              <div class="project__img" style="--c1:#1c1a17; --c2:#3a3024;"></div>
-            </div>
-          </a>
-        </li>
-        <li class="project" data-cursor="view">
-          <a href="#" class="project__inner">
-            <span class="project__idx">/02</span>
-            <h3 class="project__title">Aoba Coffee</h3>
-            <span class="project__tag">E‑commerce · UI</span>
-            <div class="project__thumb">
-              <div class="project__img" style="--c1:#14130f; --c2:#2c3a2a;"></div>
-            </div>
-          </a>
-        </li>
-        <li class="project" data-cursor="view">
-          <a href="#" class="project__inner">
-            <span class="project__idx">/03</span>
-            <h3 class="project__title">Hanabi Festival</h3>
-            <span class="project__tag">Interactive · WebGL</span>
-            <div class="project__thumb">
-              <div class="project__img" style="--c1:#181216; --c2:#3a2435;"></div>
-            </div>
-          </a>
-        </li>
-        <li class="project" data-cursor="view">
-          <a href="#" class="project__inner">
-            <span class="project__idx">/04</span>
-            <h3 class="project__title">Kuro Architects</h3>
-            <span class="project__tag">Portfolio · Motion</span>
-            <div class="project__thumb">
-              <div class="project__img" style="--c1:#121315; --c2:#243038;"></div>
-            </div>
-          </a>
-        </li>
-      </ul>
-    </section>
-
-    <!-- ABOUT -->
+    <!-- 02 — ABOUT -->
     <section class="about" id="about">
-      <div class="section-head">
-        <span class="section-head__idx">02</span>
-        <h2 class="section-head__title reveal">About</h2>
-        <span class="section-head__note reveal">The maker</span>
-      </div>
-      <div class="about__grid">
-        <p class="about__lead reveal">
-          私は<em>デザインとコード</em>の境界で働くクリエイティブデベロッパーです。
-          コンセプトの設計からインタラクションの実装まで、一貫した手触りで形にします。
-        </p>
-        <div class="about__cols">
-          <div class="about__col reveal">
-            <h4>Approach</h4>
-            <p>素材としての余白、タイポグラフィ、そして動き。引き算で残るものに価値があると考えています。</p>
-          </div>
-          <div class="about__col reveal">
-            <h4>Toolkit</h4>
-            <ul>
-              <li>HTML / CSS / JavaScript</li>
-              <li>React · Next.js · Three.js</li>
-              <li>Figma · GSAP · WebGL</li>
-            </ul>
-          </div>
-          <div class="about__col reveal">
-            <h4>Recognition</h4>
-            <ul>
-              <li>Awwwards — Honorable</li>
-              <li>CSS Design Awards</li>
-              <li>FWA of the Day</li>
-            </ul>
-          </div>
+      <div class="section-nbr"><span>02</span><em>/</em></div>
+      <div class="section-nbr section-nbr--end"><em>/</em><span>04</span></div>
+      <p class="about__lead">
+        <span class="word">I</span> <span class="word">design</span> <span class="word">and</span> <span class="word">build</span>
+        <span class="word">interfaces</span> <span class="word">that</span> <span class="word">sit</span>
+        <span class="word">between</span> <span class="word em">art</span> <span class="word">direction</span>
+        <span class="word">and</span> <span class="word em">engineering</span><span class="word">—</span>
+        <span class="word">precise,</span> <span class="word">tactile,</span> <span class="word">and</span> <span class="word">unmistakably</span> <span class="word">made.</span>
+      </p>
+      <div class="about__meta">
+        <div class="about__col">
+          <h4>Currently</h4>
+          <p>Freelance · Open for selected collaborations worldwide.</p>
+        </div>
+        <div class="about__col">
+          <h4>Based in</h4>
+          <p>Tokyo, Japan — working globally (GMT+9).</p>
         </div>
       </div>
     </section>
 
-    <!-- CONTACT -->
-    <section class="contact" id="contact">
-      <span class="contact__idx">03 — Contact</span>
-      <a href="mailto:ryotagu.business@gmail.com" class="contact__mail" data-cursor="link">
-        <span class="contact__line">Let’s build</span>
-        <span class="contact__line italic">something rare.</span>
-      </a>
-      <a href="mailto:ryotagu.business@gmail.com" class="magnetic" data-cursor="link">
-        <span class="magnetic__inner">Get in touch</span>
-      </a>
+    <!-- 03 — FEATURED PROJECTS -->
+    <section class="featured" id="projects">
+      <div class="section-nbr"><span>03</span><em>/</em> Featured</div>
+      <ul class="proj-list">
+        <li class="proj" data-cursor="view">
+          <a href="#"><span class="proj__nbr">001</span><span class="proj__name">Lumen Studio</span><span class="proj__type">Brand · Web</span><span class="proj__year">’26</span></a>
+        </li>
+        <li class="proj" data-cursor="view">
+          <a href="#"><span class="proj__nbr">002</span><span class="proj__name">Aoba Coffee</span><span class="proj__type">E‑commerce</span><span class="proj__year">’25</span></a>
+        </li>
+        <li class="proj" data-cursor="view">
+          <a href="#"><span class="proj__nbr">003</span><span class="proj__name">Hanabi Festival</span><span class="proj__type">Interactive · WebGL</span><span class="proj__year">’25</span></a>
+        </li>
+        <li class="proj" data-cursor="view">
+          <a href="#"><span class="proj__nbr">004</span><span class="proj__name">Kuro Architects</span><span class="proj__type">Portfolio · Motion</span><span class="proj__year">’24</span></a>
+        </li>
+      </ul>
     </section>
-  </main>
 
-  <footer class="footer">
-    <div class="footer__row">
-      <span>© 2026 Ryota</span>
-      <div class="footer__social">
-        <a href="#" data-cursor="link">GitHub</a>
-        <a href="#" data-cursor="link">Instagram</a>
-        <a href="#" data-cursor="link">X / Twitter</a>
+    <!-- 04 — CAPABILITIES -->
+    <section class="capabilities" id="capabilities">
+      <div class="section-nbr"><span>04</span><em>/</em> Capabilities</div>
+      <h2 class="capabilities__head">Project types<br />I specialize in</h2>
+      <div class="capabilities__hint" data-cursor>← Drag →</div>
+      <div class="cap-track" id="capTrack">
+        <div class="cap-row">
+          <span class="cap">Art Direction</span>
+          <span class="cap">Web Design</span>
+          <span class="cap">Front‑end Development</span>
+          <span class="cap">Interaction Design</span>
+          <span class="cap">Creative Coding</span>
+          <span class="cap">Brand Systems</span>
+          <span class="cap">Motion</span>
+          <span class="cap">WebGL</span>
+          <span class="cap">Prototyping</span>
+        </div>
       </div>
-      <span>Tokyo, Japan</span>
-    </div>
-    <div class="footer__big" aria-hidden="true">RYOTA</div>
-  </footer>
+    </section>
+
+    <!-- CONTACT / FOOTER -->
+    <footer class="footer" id="contact">
+      <div class="footer__top">
+        <span class="footer__label">Get in touch</span>
+        <a href="mailto:ryotagu.business@gmail.com" class="footer__mail link-mask" data-cursor>
+          <span data-text="ryotagu.business@gmail.com">ryotagu.business@gmail.com</span>
+        </a>
+      </div>
+      <div class="footer__socials">
+        <a href="#" class="link-mask" data-cursor><span data-text="Instagram">Instagram</span></a>
+        <a href="#" class="link-mask" data-cursor><span data-text="Twitter / X">Twitter / X</span></a>
+        <a href="#" class="link-mask" data-cursor><span data-text="GitHub">GitHub</span></a>
+        <a href="#" class="link-mask" data-cursor><span data-text="LinkedIn">LinkedIn</span></a>
+      </div>
+      <div class="footer__big" aria-hidden="true">RYOTA</div>
+      <div class="footer__base">
+        <span>© 2026 — All rights reserved</span>
+        <span id="footClock">Tokyo —:—</span>
+      </div>
+    </footer>
+  </main>
 
   <script src="assets/js/main.js"></script>
 </body>

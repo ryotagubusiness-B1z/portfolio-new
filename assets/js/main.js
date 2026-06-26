@@ -1,158 +1,156 @@
 /* =========================================================
    Ryota — Portfolio interactions
-   cursor lerp · magnetic · loader · reveals · marquee thumbs
+   crosshair cursor · loader · drag track · reveals · clock
    ========================================================= */
 (() => {
   "use strict";
 
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const lerp = (a, b, n) => a + (b - a) * n;
 
-  /* ---------- loader ---------- */
-  const loader = document.getElementById("loader");
-  const numEl = document.getElementById("loaderNum");
-  document.documentElement.classList.add("is-loading");
-
-  function runLoader(done) {
-    if (!loader || reduceMotion) { finish(); return; }
-    let n = 0;
-    const tick = () => {
-      n += Math.max(1, Math.round((100 - n) * 0.08));
-      if (n >= 100) { n = 100; numEl.textContent = n; setTimeout(finish, 350); return; }
-      numEl.textContent = n;
-      setTimeout(tick, 80 + Math.random() * 60);
-    };
-    tick();
-    function finish() {
-      loader && loader.classList.add("done");
-      document.documentElement.classList.remove("is-loading");
-      document.body.classList.add("loaded");
-      done && done();
-    }
-  }
-
-  /* ---------- custom cursor ---------- */
+  /* ---------- crosshair cursor ---------- */
   function initCursor() {
     if (!fine) return;
-    const dot = document.querySelector(".cursor-dot");
-    const ring = document.querySelector(".cursor-ring");
-    if (!dot || !ring) return;
+    const cur = document.querySelector(".cursor");
+    if (!cur) return;
+    let mx = innerWidth / 2, my = innerHeight / 2, x = mx, y = my;
 
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2;
-    let dx = mx, dy = my, rx = mx, ry = my;
-
-    window.addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+    addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
     document.addEventListener("mouseleave", () => document.body.classList.add("cur-hide"));
     document.addEventListener("mouseenter", () => document.body.classList.remove("cur-hide"));
 
-    (function render() {
-      dx = lerp(dx, mx, 0.85); dy = lerp(dy, my, 0.85);
-      rx = lerp(rx, mx, 0.18); ry = lerp(ry, my, 0.18);
-      dot.style.transform = `translate3d(${dx}px,${dy}px,0) translate(-50%,-50%)`;
-      ring.style.transform = `translate3d(${rx}px,${ry}px,0) translate(-50%,-50%)`;
-      requestAnimationFrame(render);
+    (function raf() {
+      x = lerp(x, mx, 0.2); y = lerp(y, my, 0.2);
+      cur.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      requestAnimationFrame(raf);
     })();
 
-    // hover states via delegation
-    const setState = (type) => {
-      document.body.classList.toggle("cur-link", type === "link");
-      document.body.classList.toggle("cur-view", type === "view");
+    const set = (t) => {
+      document.body.classList.toggle("cur-link", t === "" || t === "link");
+      document.body.classList.toggle("cur-view", t === "view");
     };
     document.querySelectorAll("[data-cursor]").forEach((el) => {
-      el.addEventListener("mouseenter", () => setState(el.dataset.cursor));
-      el.addEventListener("mouseleave", () => setState(null));
+      el.addEventListener("mouseenter", () => set(el.dataset.cursor));
+      el.addEventListener("mouseleave", () => set(null));
     });
   }
 
-  /* ---------- magnetic elements ---------- */
-  function initMagnetic() {
-    if (!fine) return;
-    document.querySelectorAll(".magnetic").forEach((el) => {
-      const inner = el.querySelector(".magnetic__inner") || el;
-      const strength = 0.4;
-      el.addEventListener("mousemove", (e) => {
-        const r = el.getBoundingClientRect();
-        const x = e.clientX - (r.left + r.width / 2);
-        const y = e.clientY - (r.top + r.height / 2);
-        el.style.transform = `translate(${x * strength}px, ${y * strength}px)`;
-        inner.style.transform = `translate(${x * strength * 0.4}px, ${y * strength * 0.4}px)`;
-      });
-      el.addEventListener("mouseleave", () => {
-        el.style.transform = "translate(0,0)";
-        inner.style.transform = "translate(0,0)";
-      });
-    });
-  }
+  /* ---------- loader ---------- */
+  function runLoader(done) {
+    const loader = document.getElementById("loader");
+    const num = document.getElementById("loaderNum");
+    document.documentElement.classList.add("is-locked");
 
-  /* ---------- project hover thumbnails follow cursor ---------- */
-  function initProjectThumbs() {
-    if (!fine) return;
-    document.querySelectorAll(".project").forEach((proj) => {
-      const thumb = proj.querySelector(".project__thumb");
-      if (!thumb) return;
-      proj.addEventListener("mouseenter", () => proj.classList.add("show-thumb"));
-      proj.addEventListener("mouseleave", () => proj.classList.remove("show-thumb"));
-      proj.addEventListener("mousemove", (e) => {
-        thumb.style.left = e.clientX + "px";
-        thumb.style.top = e.clientY + "px";
-      });
-    });
+    const finish = () => {
+      loader && loader.classList.add("done");
+      document.documentElement.classList.remove("is-locked");
+      document.body.classList.add("loaded");
+      done && done();
+    };
+    if (!loader || reduce) { finish(); return; }
+
+    let n = 0;
+    (function tick() {
+      n += Math.max(1, Math.round((100 - n) * 0.07));
+      if (n >= 100) { n = 100; num.textContent = n; setTimeout(finish, 450); return; }
+      num.textContent = n;
+      setTimeout(tick, 70 + Math.random() * 70);
+    })();
   }
 
   /* ---------- scroll reveal ---------- */
   function initReveal() {
-    const items = document.querySelectorAll(".reveal");
-    if (!("IntersectionObserver" in window) || reduceMotion) {
+    const items = document.querySelectorAll(".reveal, .about__lead");
+    if (!("IntersectionObserver" in window) || reduce) {
       items.forEach((i) => i.classList.add("in"));
       return;
     }
     const io = new IntersectionObserver((entries) => {
-      entries.forEach((e, i) => {
-        if (e.isIntersecting) {
-          setTimeout(() => e.target.classList.add("in"), i * 70);
-          io.unobserve(e.target);
-        }
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
       });
-    }, { threshold: 0.15, rootMargin: "0px 0px -8% 0px" });
+    }, { threshold: 0.2, rootMargin: "0px 0px -10% 0px" });
     items.forEach((i) => io.observe(i));
+
+    // stagger words inside the about lead
+    const lead = document.querySelector(".about__lead");
+    if (lead) lead.querySelectorAll(".word").forEach((w, i) => {
+      w.style.transitionDelay = (i * 0.03).toFixed(2) + "s";
+    });
   }
 
-  /* ---------- nav hide on scroll down ---------- */
-  function initNav() {
-    const nav = document.getElementById("nav");
-    if (!nav) return;
+  /* ---------- header hide on scroll ---------- */
+  function initHeader() {
+    const header = document.getElementById("header");
+    if (!header) return;
     let last = 0;
-    window.addEventListener("scroll", () => {
-      const y = window.scrollY;
-      nav.style.transform = (y > last && y > 200) ? "translateY(-110%)" : "translateY(0)";
-      nav.style.transition = "transform .5s cubic-bezier(0.16,1,0.3,1)";
+    addEventListener("scroll", () => {
+      const y = scrollY;
+      header.style.transition = "transform .5s cubic-bezier(0.62,0.05,0.01,0.99)";
+      header.style.transform = (y > last && y > 220) ? "translateY(-110%)" : "translateY(0)";
       last = y;
     }, { passive: true });
   }
 
-  /* ---------- clock (JST) ---------- */
+  /* ---------- capabilities: click & drag + auto marquee ---------- */
+  function initDragTrack() {
+    const track = document.getElementById("capTrack");
+    if (!track) return;
+    const row = track.querySelector(".cap-row");
+    if (!row) return;
+
+    // duplicate content for seamless marquee
+    row.innerHTML += row.innerHTML;
+
+    let pos = 0, target = 0, vel = 0.4;
+    let dragging = false, startX = 0, startPos = 0;
+    let max = 0;
+    const measure = () => { max = row.scrollWidth / 2; };
+    measure(); addEventListener("resize", measure);
+
+    track.addEventListener("pointerdown", (e) => {
+      dragging = true; startX = e.clientX; startPos = pos;
+      track.setPointerCapture(e.pointerId);
+    });
+    track.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      pos = startPos + (e.clientX - startX);
+    });
+    const end = () => { dragging = false; };
+    track.addEventListener("pointerup", end);
+    track.addEventListener("pointercancel", end);
+
+    (function loop() {
+      if (!dragging && !reduce) pos -= vel;     // gentle auto-scroll
+      // wrap seamlessly
+      if (pos <= -max) pos += max;
+      if (pos > 0) pos -= max;
+      row.style.transform = `translateX(${pos}px)`;
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  /* ---------- footer clock (Tokyo) ---------- */
   function initClock() {
-    const el = document.getElementById("clock");
+    const el = document.getElementById("footClock");
     if (!el) return;
     const tick = () => {
       const t = new Date().toLocaleTimeString("en-GB", {
         hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo",
       });
-      el.textContent = t;
+      el.textContent = "Tokyo " + t;
     };
-    tick(); setInterval(tick, 1000 * 30);
+    tick(); setInterval(tick, 30000);
   }
 
   /* ---------- boot ---------- */
-  window.addEventListener("DOMContentLoaded", () => {
+  addEventListener("DOMContentLoaded", () => {
     initCursor();
-    initMagnetic();
-    initProjectThumbs();
-    initNav();
+    initHeader();
+    initDragTrack();
     initClock();
-    runLoader(() => initReveal());
-    // safety: reveal anyway if loader skipped
-    setTimeout(initReveal, 2500);
+    runLoader(initReveal);
+    setTimeout(initReveal, 2600); // safety
   });
 })();
