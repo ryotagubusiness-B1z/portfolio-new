@@ -59,10 +59,10 @@
           float band = r - front;
           float fade = exp(-age * 1.6) * smoothstep(0.0, 0.02, front);
           // bipolar wavelet: dark trough just inside, bright crest just outside
-          // -> a crisp light/dark EDGE rather than a soft glow
-          float ring = (-band) * exp(-band * band * 7000.0) * 200.0 * fade;
+          // narrow band = a thin, crisp ring edge
+          float ring = (-band) * exp(-band * band * 16000.0) * 300.0 * fade;
           edge += ring;                            // sharp outline (signed)
-          disp += (rel / (r + 1e-4)) * ring * 0.012; // only a faint warp at the edge
+          disp += (rel / (r + 1e-4)) * ring * 0.008; // only a faint warp at the edge
         }
 
         // ---- flowing smoke (slow black/white movement) ----
@@ -76,8 +76,8 @@
         vec2 dM = uv - uMouse / uRes.xy; dM.x *= aspect;
         float light = exp(-length(dM) * 3.4) * 0.05 * uStr;
 
-        // ripple edge highlight: crisp shape but low contrast so it blends in
-        float ripLight = edge * 0.14;
+        // ripple edge highlight: thin crisp ring, gentle tone so it blends in
+        float ripLight = edge * 0.07;
 
         float c = base + light + ripLight;
 
