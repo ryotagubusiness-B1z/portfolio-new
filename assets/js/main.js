@@ -305,75 +305,6 @@
     });
   }
 
-  /* ---------- scroll theme: fog clears, background black -> white ---------- */
-  function initScrollTheme() {
-    const root = document.documentElement;
-    const canvas = document.getElementById("bgfx");
-    const mix = (a, b, t) => [
-      Math.round(a[0] + (b[0] - a[0]) * t),
-      Math.round(a[1] + (b[1] - a[1]) * t),
-      Math.round(a[2] + (b[2] - a[2]) * t),
-    ];
-    const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
-    // dark (top) -> light (after the hero)
-    const D = { bg: [7, 7, 10],   fg: [255, 255, 255], dim: [138, 138, 138] };
-    const L = { bg: [245, 244, 241], fg: [16, 16, 18], dim: [120, 120, 118] };
-
-    const update = () => {
-      const vh = innerHeight;
-      const start = vh * 0.55, end = vh * 1.15;     // transition around hero/about edge
-      const p = Math.min(1, Math.max(0, (scrollY - start) / (end - start)));
-      root.style.setProperty("--bg", rgb(mix(D.bg, L.bg, p)));
-      root.style.setProperty("--fg", rgb(mix(D.fg, L.fg, p)));
-      root.style.setProperty("--dim", rgb(mix(D.dim, L.dim, p)));
-      const lv = Math.round(255 * (1 - p));          // line: white -> black
-      root.style.setProperty("--line", `rgba(${lv},${lv},${lv},0.16)`);
-      if (canvas) canvas.style.opacity = (1 - p).toFixed(3); // fog clears
-    };
-    update();
-    addEventListener("scroll", update, { passive: true });
-    addEventListener("resize", update, { passive: true });
-  }
-
-  /* ---------- headline hover: letters lift toward the cursor ---------- */
-  function initHeadlineHover() {
-    if (!fine) return;
-    const h1 = document.querySelector(".kinetic");
-    const main = document.querySelector(".kinetic__layer--main");
-    if (!h1 || !main) return;
-
-    // split each line into per-character spans
-    main.querySelectorAll(":scope > span").forEach((line) => {
-      const text = line.textContent;
-      line.textContent = "";
-      [...text].forEach((ch) => {
-        const s = document.createElement("span");
-        s.className = "char";
-        s.textContent = ch === " " ? " " : ch;
-        line.appendChild(s);
-      });
-    });
-    const chars = [...main.querySelectorAll(".char")];
-    let mx = 0, my = 0, raf = null;
-
-    const apply = () => {
-      raf = null;
-      for (const c of chars) {
-        const r = c.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const f = Math.max(0, 1 - Math.hypot(mx - cx, my - cy) / 175);
-        c.style.transform = f > 0 ? `translateY(${(-(f * f) * 40).toFixed(1)}px)` : "";
-      }
-    };
-    h1.addEventListener("mousemove", (e) => {
-      mx = e.clientX; my = e.clientY;
-      if (!raf) raf = requestAnimationFrame(apply);
-    });
-    h1.addEventListener("mouseleave", () => {
-      chars.forEach((c) => (c.style.transform = ""));
-    });
-  }
-
   /* ---------- header hide on scroll ---------- */
   function initHeader() {
     const header = document.getElementById("header");
@@ -444,8 +375,6 @@
     initCursor();
     initHeader();
     initSmoothScroll();
-    initScrollTheme();
-    initHeadlineHover();
     initDragTrack();
     initClock();
     runLoader(initReveal);
