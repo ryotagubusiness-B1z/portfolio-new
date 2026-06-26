@@ -46,9 +46,10 @@
         vec2 uv = frag / uRes.xy;
         float aspect = uRes.x / uRes.y;
 
-        // ---- water-drop ripples: a thin expanding ring (the EDGE) ----
-        vec2  disp  = vec2(0.0);  // radial refraction offset (uv space)
-        float edge  = 0.0;        // bright ring edge
+        // ---- ripple as a radial PUSH of the particle field ----
+        // each drop nudges the fine grain outward in an expanding ring; the
+        // ripple is only visible through the displaced grain, never as glow.
+        vec2 push = vec2(0.0);
         for (int i = 0; i < ${N}; i++) {
           vec3 dp = uDrops[i];
           if (dp.z < 0.0) continue;
@@ -57,18 +58,16 @@
           float age = dp.z;
           float front = age * 0.09;                // quarter-size expansion
           float band = r - front;
-          // ease in slowly so a freshly-born ripple starts almost invisible,
-          // then gently fade out as it expands
+          // ease in slowly so a freshly-born ripple starts almost invisible
           float fade = smoothstep(0.0, 0.55, age) * exp(-age * 1.4);
-          // bipolar wavelet: dark trough just inside, bright crest just outside
-          // narrow band = a thin, crisp ring edge
+          // bipolar wavelet -> particles bunch at the wavefront (a compression ring)
           float ring = (-band) * exp(-band * band * 16000.0) * 300.0 * fade;
-          edge += ring;                            // sharp outline (signed)
-          disp += (rel / (r + 1e-4)) * ring * 0.008; // only a faint warp at the edge
+          push += (rel / (r + 1e-4)) * ring;
         }
+        push *= 0.004;                             // super-subtle displacement
 
         // ---- flowing smoke (slow black/white movement) ----
-        vec2 sp = uv + disp;
+        vec2 sp = uv + push * 0.35;                // smoke barely warps
         float t = uTime * 0.05;
         float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
         float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
@@ -78,13 +77,11 @@
         vec2 dM = uv - uMouse / uRes.xy; dM.x *= aspect;
         float light = exp(-length(dM) * 3.4) * 0.05 * uStr;
 
-        // ripple edge highlight: thin crisp ring, very faint — barely perceptible
-        float ripLight = edge * 0.045;
+        float c = base + light;
 
-        float c = base + light + ripLight;
-
-        // film grain
-        float g = hash(frag + fract(uTime) * 100.0);
+        // film grain — fine particles pushed aside by the ripple
+        vec2 gp = frag + push * uRes.y;            // displace grain sampling (pixels)
+        float g = hash(floor(gp) + floor(uTime * 8.0) * vec2(1.3, 1.7));
         c += (g - 0.5) * 0.05;
 
         gl_FragColor = vec4(vec3(clamp(c, 0.0, 1.0)), 1.0);
