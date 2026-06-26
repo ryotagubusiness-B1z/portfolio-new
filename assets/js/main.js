@@ -73,7 +73,7 @@
         float distM = length(dM);
         // gaussian confined to uRadius (= 2cm); sampling outward pulls particles in
         float pull = exp(-(distM * distM) / (uRadius * uRadius));
-        vec2 attract = (uv - m) * pull * 0.26 * (0.55 + 0.45 * uStr);
+        vec2 attract = (uv - m) * pull * 0.5 * (0.55 + 0.45 * uStr);
 
         vec2 total = push + attract;
 
@@ -180,7 +180,7 @@
       gl.uniform1f(uTime, nowT);
       gl.uniform2f(uMouse, mx, my);
       gl.uniform1f(uStr, str);
-      gl.uniform1f(uRadius, (2.0 * CM_PX) / innerHeight); // 2cm as fraction of height
+      gl.uniform1f(uRadius, (4.0 * CM_PX) / innerHeight); // 4cm as fraction of height
       gl.uniform3fv(uDrops, drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       requestAnimationFrame(render);
