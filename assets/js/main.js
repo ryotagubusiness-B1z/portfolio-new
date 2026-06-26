@@ -65,20 +65,6 @@
     });
   }
 
-  /* ---------- aurora follows cursor ---------- */
-  function initAurora() {
-    const aurora = document.querySelector(".aurora");
-    if (!aurora || reduceMotion) return;
-    let ax = window.innerWidth / 2, ay = window.innerHeight * 0.3;
-    let tx = ax, ty = ay;
-    window.addEventListener("mousemove", (e) => { tx = e.clientX; ty = e.clientY; }, { passive: true });
-    (function loop() {
-      ax = lerp(ax, tx, 0.04); ay = lerp(ay, ty, 0.04);
-      aurora.style.left = ax + "px"; aurora.style.top = ay + "px";
-      requestAnimationFrame(loop);
-    })();
-  }
-
   /* ---------- magnetic elements ---------- */
   function initMagnetic() {
     if (!fine) return;
@@ -161,7 +147,6 @@
   /* ---------- boot ---------- */
   window.addEventListener("DOMContentLoaded", () => {
     initCursor();
-    initAurora();
     initMagnetic();
     initProjectThumbs();
     initNav();
