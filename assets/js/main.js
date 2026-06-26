@@ -64,23 +64,28 @@
           float ring = (-band) * exp(-band * band * 16000.0) * 300.0 * fade;
           push += (rel / (r + 1e-4)) * ring;
         }
-        push *= 0.004;                             // super-subtle displacement
+        push *= 0.004;                             // super-subtle ripple displacement
+
+        // ---- gentle attraction: smoke + grain are drawn toward the cursor ----
+        vec2 m = uMouse / uRes.xy;
+        vec2 dM = uv - m; dM.x *= aspect;
+        float distM = length(dM);
+        // sampling farther out near the cursor pulls the particles inward (gather)
+        vec2 attract = (uv - m) * exp(-distM * 4.2) * 0.16 * (0.55 + 0.45 * uStr);
+
+        vec2 total = push + attract;
 
         // ---- flowing smoke (slow black/white movement) ----
-        vec2 sp = uv + push * 0.35;                // smoke barely warps
+        vec2 sp = uv + total * 0.7;
         float t = uTime * 0.05;
         float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
         float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
         float base = mix(0.015, 0.19, n);
 
-        // soft cursor light reveals the smoke (subtle, calm)
-        vec2 dM = uv - uMouse / uRes.xy; dM.x *= aspect;
-        float light = exp(-length(dM) * 3.4) * 0.05 * uStr;
+        float c = base;                            // no glow — purely displacement
 
-        float c = base + light;
-
-        // film grain — fine particles pushed aside by the ripple
-        vec2 gp = frag + push * uRes.y;            // displace grain sampling (pixels)
+        // film grain — fine particles dragged toward the cursor
+        vec2 gp = frag + total * uRes.y;           // displace grain sampling (pixels)
         float g = hash(floor(gp) + floor(uTime * 8.0) * vec2(1.3, 1.7));
         c += (g - 0.5) * 0.05;
 
