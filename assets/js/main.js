@@ -9,6 +9,122 @@
   const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const lerp = (a, b, n) => a + (b - a) * n;
 
+  /* ---------- WebGL background: smoke + grain + cursor ripple ---------- */
+  function initBackground() {
+    const canvas = document.getElementById("bgfx");
+    if (!canvas || reduce) { document.documentElement.style.background = "#000"; return; }
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
+    if (!gl) { document.documentElement.style.background = "#000"; return; }
+
+    const vert = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
+    const frag = `
+      precision highp float;
+      uniform vec2  uRes;
+      uniform float uTime;
+      uniform vec2  uMouse;   // pixels (trailing)
+      uniform float uStr;     // cursor influence 0..1
+
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p){
+        vec2 i = floor(p), f = fract(p);
+        float a = hash(i), b = hash(i + vec2(1.,0.));
+        float c = hash(i + vec2(0.,1.)), d = hash(i + vec2(1.,1.));
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+      }
+      float fbm(vec2 p){
+        float v = 0.0, a = 0.5;
+        for(int i = 0; i < 5; i++){ v += a * noise(p); p *= 2.02; a *= 0.5; }
+        return v;
+      }
+      void main(){
+        vec2 uv = gl_FragCoord.xy / uRes.xy;
+        float aspect = uRes.x / uRes.y;
+        vec2 m = uMouse / uRes.xy;
+
+        // ripple distortion radiating from the cursor
+        vec2 d = uv - m; d.x *= aspect;
+        float dist = length(d);
+        float ripple = sin(dist * 22.0 - uTime * 3.0) * exp(-dist * 6.0) * 0.03 * uStr;
+        vec2 sp = uv + (d / (dist + 1e-4)) * ripple;
+
+        // flowing smoke with domain warp (slow black/white movement)
+        float t = uTime * 0.05;
+        float w = fbm(sp * 3.0 + vec2(t, t * 0.7));
+        float n = fbm(sp * 3.0 + w * 1.4 + vec2(-t * 0.8, t * 0.6));
+        float base = mix(0.015, 0.19, n);
+
+        // soft cursor light reveals the smoke
+        float light = exp(-dist * 2.6) * 0.28 * uStr;
+        // concentric brightness rings = the visible ripple
+        float rings = sin(dist * 22.0 - uTime * 3.0) * exp(-dist * 4.5) * 0.06 * uStr;
+
+        float c = base + light + rings;
+
+        // film grain
+        float g = hash(gl_FragCoord.xy + fract(uTime) * 100.0);
+        c += (g - 0.5) * 0.05;
+
+        gl_FragColor = vec4(vec3(clamp(c, 0.0, 1.0)), 1.0);
+      }`;
+
+    const compile = (type, src) => {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; }
+      return s;
+    };
+    const vs = compile(gl.VERTEX_SHADER, vert), fs = compile(gl.FRAGMENT_SHADER, frag);
+    if (!vs || !fs) { document.documentElement.style.background = "#000"; return; }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "p");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    const uRes = gl.getUniformLocation(prog, "uRes");
+    const uTime = gl.getUniformLocation(prog, "uTime");
+    const uMouse = gl.getUniformLocation(prog, "uMouse");
+    const uStr = gl.getUniformLocation(prog, "uStr");
+
+    const DPR = Math.min(devicePixelRatio || 1, 1.5);
+    let W = 0, H = 0;
+    const resize = () => {
+      W = Math.floor(innerWidth * DPR); H = Math.floor(innerHeight * DPR);
+      canvas.width = W; canvas.height = H;
+      gl.viewport(0, 0, W, H);
+    };
+    resize(); addEventListener("resize", resize);
+
+    // mouse: trailing position + influence that fades when still
+    let tmx = innerWidth / 2 * DPR, tmy = innerHeight / 2 * DPR;
+    let mx = tmx, my = tmy, str = 0, tStr = 0.5;
+    addEventListener("mousemove", (e) => {
+      tmx = e.clientX * DPR; tmy = (innerHeight - e.clientY) * DPR; // flip Y for GL
+      tStr = 1.0;
+    }, { passive: true });
+
+    let start = null;
+    const render = (now) => {
+      if (start === null) start = now;
+      const time = (now - start) / 1000;
+      mx = lerp(mx, tmx, 0.1); my = lerp(my, tmy, 0.1);
+      tStr = Math.max(0.5, tStr - 0.012); // decay influence toward idle floor
+      str = lerp(str, tStr, 0.08);
+      gl.uniform2f(uRes, W, H);
+      gl.uniform1f(uTime, time);
+      gl.uniform2f(uMouse, mx, my);
+      gl.uniform1f(uStr, str);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      requestAnimationFrame(render);
+    };
+    requestAnimationFrame(render);
+  }
+
   /* ---------- crosshair cursor ---------- */
   function initCursor() {
     if (!fine) return;
@@ -146,6 +262,7 @@
 
   /* ---------- boot ---------- */
   addEventListener("DOMContentLoaded", () => {
+    initBackground();
     initCursor();
     initHeader();
     initDragTrack();
