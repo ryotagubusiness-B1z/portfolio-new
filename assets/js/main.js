@@ -54,8 +54,8 @@
 
         // cursor repulsion — lines bend AWAY from the cursor (sample pulled toward it)
         vec2 d = px - mm;
-        float force = exp(-dot(d, d) * 8.0);
-        px -= d * force * 2.6;   // 0 at the cursor -> the lines curve away around it
+        float force = exp(-dot(d, d) * 32.0);   // ~half the influence radius
+        px -= d * force * 5.2;   // 0 at the cursor -> the lines curve away around it
 
         // flowing rounded pipes that meander in every direction (undulating)
         float warp  = fbm(px * 1.2 + vec2(t, -t * 0.5));
