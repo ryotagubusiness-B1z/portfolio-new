@@ -52,18 +52,18 @@
         vec2 px = uv; px.x *= aspect;             // aspect-correct space
         vec2 mm = uMouse / uRes.xy; mm.x *= aspect;
 
-        // cursor repulsion — the lines bend smoothly AROUND the cursor (no singularity)
+        // cursor repulsion — lines bend AWAY from the cursor (sample pulled toward it)
         vec2 d = px - mm;
         float force = exp(-dot(d, d) * 8.0);
-        px += d * force * 2.6;   // 0 at the cursor, swells outward -> lines curve away
+        px -= d * force * 2.6;   // 0 at the cursor -> the lines curve away around it
 
-        // flowing rounded pipes that gently undulate (premium, macOS-wallpaper feel)
-        float warp = fbm(px * 0.85 + vec2(t, -t * 0.5));
-        float field = px.x * 6.0 + warp * 2.6;
+        // flowing rounded pipes that meander in every direction (undulating)
+        float warp  = fbm(px * 1.2 + vec2(t, -t * 0.5));
+        float warp2 = fbm(px * 0.7 + vec2(-t * 0.3, t * 0.4));
+        float field = px.x * 3.0 + px.y * 1.3 + (warp + warp2) * 4.0;
 
         float g = fract(field);
-        float ridge = sin(g * 3.14159265);        // rounded ridge across each band
-        ridge = pow(max(ridge, 0.0), 1.9);
+        float ridge = pow(max(sin(g * 3.14159265), 0.0), 1.9);
 
         // dark, glossy charcoal pipes on near-black
         vec3 base = vec3(0.010, 0.011, 0.014);
