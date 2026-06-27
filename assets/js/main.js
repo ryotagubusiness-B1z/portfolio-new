@@ -267,59 +267,6 @@
     });
   }
 
-  /* ---------- headline: letters become blocks that shift near the cursor ---------- */
-  function initHeadlineBlocks() {
-    if (!fine) return;
-    const h1 = document.querySelector(".kinetic");
-    const main = document.querySelector(".kinetic__layer--main");
-    if (!h1 || !main) return;
-
-    // split each line into per-character spans
-    main.querySelectorAll(":scope > span").forEach((line) => {
-      const text = line.textContent;
-      line.textContent = "";
-      [...text].forEach((ch) => {
-        const s = document.createElement("span");
-        s.className = "char";
-        s.textContent = ch === " " ? " " : ch;
-        line.appendChild(s);
-      });
-    });
-    const chars = [...main.querySelectorAll(".char")];
-    // deterministic per-letter shift direction
-    const dir = chars.map((_, i) => {
-      const r = Math.sin(i * 12.9898) * 43758.5453;
-      const a = (r - Math.floor(r)) * Math.PI * 2;
-      return [Math.cos(a), Math.sin(a)];
-    });
-
-    let mx = 0, my = 0, raf = null;
-    const apply = () => {
-      raf = null;
-      for (let i = 0; i < chars.length; i++) {
-        const c = chars[i];
-        const b = c.getBoundingClientRect();
-        const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
-        const f = Math.max(0, 1 - Math.hypot(mx - cx, my - cy) / 170);
-        const amt = f * f;
-        if (amt > 0) {
-          c.style.transform = `translate(${(dir[i][0] * amt * 24).toFixed(1)}px, ${(dir[i][1] * amt * 24).toFixed(1)}px)`;
-          c.classList.toggle("shift", amt > 0.18);
-        } else {
-          c.style.transform = "";
-          c.classList.remove("shift");
-        }
-      }
-    };
-    h1.addEventListener("mousemove", (e) => {
-      mx = e.clientX; my = e.clientY;
-      if (!raf) raf = requestAnimationFrame(apply);
-    });
-    h1.addEventListener("mouseleave", () => {
-      chars.forEach((c) => { c.style.transform = ""; c.classList.remove("shift"); });
-    });
-  }
-
   /* ---------- eased smooth scroll for in-page anchors ---------- */
   function initSmoothScroll() {
     if (reduce) return;
@@ -424,7 +371,6 @@
   addEventListener("DOMContentLoaded", () => {
     initBackground();
     initCursor();
-    initHeadlineBlocks();
     initHeader();
     initSmoothScroll();
     initDragTrack();
