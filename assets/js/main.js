@@ -165,28 +165,62 @@
   /* ---------- crosshair cursor ---------- */
   function initCursor() {
     if (!fine) return;
-    const cur = document.querySelector(".cursor");
+    const cur = document.querySelector(".zcursor");
     if (!cur) return;
-    let mx = innerWidth / 2, my = innerHeight / 2, x = mx, y = my;
 
-    addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+    const BASE = 13, RAD = 7;             // resting size / radius
+    let mx = innerWidth / 2, my = innerHeight / 2;
+    let x = mx, y = my, px = x, py = y;   // rendered position (+ previous)
+    let w = BASE, h = BASE, rad = RAD;    // current size
+    let target = null;                    // hovered element to wrap, or null
+    let firstMove = false;
+
+    addEventListener("mousemove", (e) => {
+      mx = e.clientX; my = e.clientY;
+      if (!firstMove) { firstMove = true; cur.classList.add("ready"); }
+    }, { passive: true });
     document.addEventListener("mouseleave", () => document.body.classList.add("cur-hide"));
     document.addEventListener("mouseenter", () => document.body.classList.remove("cur-hide"));
 
+    // links / interactive text → the block snaps to and wraps the element
+    document.querySelectorAll('a, [data-cursor], button').forEach((el) => {
+      el.addEventListener("mouseenter", () => { target = el; });
+      el.addEventListener("mouseleave", () => { target = null; });
+    });
+
     (function raf() {
-      x = lerp(x, mx, 0.2); y = lerp(y, my, 0.2);
-      cur.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      if (target) {
+        // wrap the hovered element in a rounded block
+        const r = target.getBoundingClientRect();
+        const padX = 14, padY = 8;
+        const tx = r.left + r.width / 2, ty = r.top + r.height / 2;
+        x = lerp(x, tx, 0.22); y = lerp(y, ty, 0.22);
+        w = lerp(w, r.width + padX * 2, 0.22);
+        h = lerp(h, r.height + padY * 2, 0.22);
+        rad = lerp(rad, 6, 0.22);
+        px = x; py = y;
+        cur.style.width = w + "px";
+        cur.style.height = h + "px";
+        cur.style.borderRadius = rad + "px";
+        cur.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+      } else {
+        // free: small rounded block that stretches in its direction of travel
+        x = lerp(x, mx, 0.2); y = lerp(y, my, 0.2);
+        const vx = x - px, vy = y - py;
+        const speed = Math.min(Math.hypot(vx, vy), 80);
+        const stretch = Math.min(speed * 0.012, 0.5);
+        const ang = Math.atan2(vy, vx);
+        w = lerp(w, BASE, 0.3); h = lerp(h, BASE, 0.3); rad = lerp(rad, RAD, 0.3);
+        px = x; py = y;
+        cur.style.width = w + "px";
+        cur.style.height = h + "px";
+        cur.style.borderRadius = rad + "px";
+        cur.style.transform =
+          `translate(${x}px, ${y}px) translate(-50%, -50%) ` +
+          `rotate(${ang}rad) scale(${(1 + stretch).toFixed(3)}, ${(1 - stretch * 0.65).toFixed(3)})`;
+      }
       requestAnimationFrame(raf);
     })();
-
-    const set = (t) => {
-      document.body.classList.toggle("cur-link", t === "" || t === "link");
-      document.body.classList.toggle("cur-view", t === "view");
-    };
-    document.querySelectorAll("[data-cursor]").forEach((el) => {
-      el.addEventListener("mouseenter", () => set(el.dataset.cursor));
-      el.addEventListener("mouseleave", () => set(null));
-    });
   }
 
   /* ---------- loader ---------- */

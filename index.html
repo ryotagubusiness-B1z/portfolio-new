@@ -11,19 +11,14 @@
     href="https://api.fontshare.com/v2/css?f[]=switzer@200,300,400,500,600,700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/style.css?v=141" />
 </head>
 <body>
   <!-- WebGL smoke + grain + cursor ripple background -->
   <canvas class="bg-fx" id="bgfx" aria-hidden="true"></canvas>
 
-  <!-- crosshair cursor (4 bars) -->
-  <div class="cursor" aria-hidden="true">
-    <span class="cursor_top"></span>
-    <span class="cursor_bottom"></span>
-    <span class="cursor_left"></span>
-    <span class="cursor_right"></span>
-  </div>
+  <!-- elastic block cursor -->
+  <div class="zcursor" aria-hidden="true"></div>
 
   <!-- loader -->
   <div class="loader" id="loader">
@@ -153,6 +148,6 @@
     </footer>
   </main>
 
-  <script src="assets/js/main.js"></script>
+  <script src="assets/js/main.js?v=141"></script>
 </body>
 </html>
