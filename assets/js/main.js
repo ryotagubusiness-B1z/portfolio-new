@@ -47,23 +47,32 @@
         vec2 uv = frag / uRes.xy;
         float aspect = uRes.x / uRes.y;
 
-        float t = uTime * 0.025;
+        float t = uTime;
         vec2 p = uv; p.x *= aspect;               // aspect-correct space
+        vec2 m = uMouse / uRes.xy; m.x *= aspect; // cursor (aspect-correct)
 
-        // domain-warped fbm -> a soft, irregular organic blob
-        vec2 q = vec2(fbm(p * 1.0 + vec2(0.0, t)),
-                      fbm(p * 1.0 + vec2(3.2, 1.3) - t * 0.7));
-        float n = fbm(p * 1.15 + q * 1.5 + vec2(t * 0.3, -t * 0.2));
+        // cursor halo — influence falls off with distance
+        vec2 dm = p - m;
+        float distM = length(dm);
+        float infl = exp(-distM * distM * 16.0);
 
-        // pure black, with only the top of the noise emerging as a faint white blob
-        float blob = smoothstep(0.55, 0.96, n);
+        // ---- dot-grid pattern ----
+        float GRID = 46.0;                         // cells across the height
+        vec2 g = p * GRID;
+        // dots are gently pulled toward the cursor (the pattern reacts)
+        g -= normalize(dm + 1e-4) * infl * 1.4;
+        vec2 cell = fract(g) - 0.5;
+        float dd = length(cell);
 
-        vec3 col = vec3(0.0);                      // true black
-        col += vec3(1.0) * blob * 0.11;           // faint white haze
-        col += vec3(1.0) * pow(blob, 2.6) * 0.07; // slightly brighter soft core
+        // base tiny dim dots; near the cursor they grow and brighten
+        float radius = 0.10 + 0.30 * infl;
+        float dotv = smoothstep(radius, radius - 0.06, dd);
+        float bright = 0.085 + 0.95 * infl;
+        // a very slow breathing so the field is alive
+        bright *= 0.9 + 0.1 * sin(t * 0.6 + (g.x + g.y) * 0.15);
 
-        // whisper of dither so the faint gradient never bands
-        col += (hash(frag) - 0.5) * 0.008;
+        vec3 col = vec3(dotv * bright);
+        col += (hash(frag) - 0.5) * 0.006;         // dither
 
         gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
       }`;

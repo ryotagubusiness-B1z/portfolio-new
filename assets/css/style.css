@@ -25,37 +25,6 @@ html.is-locked { overflow: hidden; }
   z-index: 0; pointer-events: none; display: block;
 }
 
-/* premium monochrome overlays (grid · grain · frame) */
-.grid {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background-image: repeating-linear-gradient(
-    to right, rgba(255,255,255,0.035) 0 1px, transparent 1px 25%);
-}
-.grain {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background-image: url("../img/noise.png"); background-size: 180px 180px;
-  opacity: 0.05;
-}
-.frame {
-  position: fixed; inset: clamp(14px, 1.6vw, 26px); z-index: 95; pointer-events: none;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.frame i { position: absolute; width: 9px; height: 9px; }
-.frame i::before, .frame i::after { content: ""; position: absolute; background: rgba(255,255,255,0.55); }
-.frame i::before { left: 50%; top: 0; width: 1px; height: 100%; transform: translateX(-50%); }
-.frame i::after { top: 50%; left: 0; height: 1px; width: 100%; transform: translateY(-50%); }
-.frame .tl { top: -5px; left: -5px; }
-.frame .tr { top: -5px; right: -5px; }
-.frame .bl { bottom: -5px; left: -5px; }
-.frame .br { bottom: -5px; right: -5px; }
-.frame__tag {
-  position: absolute; bottom: -2px; font-size: .62rem; letter-spacing: .22em;
-  text-transform: uppercase; color: rgba(255,255,255,0.38); white-space: nowrap;
-}
-.frame__tag--l { left: 0; transform-origin: left bottom; transform: rotate(-90deg) translateX(0); left: -2px; bottom: 50%; }
-.frame__tag--r { right: -2px; bottom: 50%; transform-origin: right bottom; transform: rotate(90deg); }
-@media (max-width: 720px) { .frame__tag, .grid { display: none; } }
-
 body {
   background: transparent;
   color: var(--fg);
