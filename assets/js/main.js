@@ -59,15 +59,16 @@
         // ---- dot-grid pattern ----
         float GRID = 46.0;                         // cells across the height
         vec2 g = p * GRID;
-        // dots are gently pulled toward the cursor (the pattern reacts)
-        g -= normalize(dm + 1e-4) * infl * 1.4;
+        // dots are pushed out of the cursor (a dark void reacts to the pointer)
+        g += normalize(dm + 1e-4) * infl * 1.4;
         vec2 cell = fract(g) - 0.5;
         float dd = length(cell);
 
-        // base tiny dim dots; near the cursor they grow and brighten
-        float radius = 0.10 + 0.30 * infl;
+        // far from the cursor the dots grow a little and turn whitish;
+        // near the cursor they shrink and darken (a soft dark void)
+        float radius = 0.10 + 0.10 * (1.0 - infl);
         float dotv = smoothstep(radius, radius - 0.06, dd);
-        float bright = 0.085 + 0.95 * infl;
+        float bright = 0.70 * (1.0 - infl);
         // a very slow breathing so the field is alive
         bright *= 0.9 + 0.1 * sin(t * 0.6 + (g.x + g.y) * 0.15);
 
