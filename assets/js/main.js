@@ -47,37 +47,23 @@
         vec2 uv = frag / uRes.xy;
         float aspect = uRes.x / uRes.y;
 
-        float t = uTime * 0.02;
+        float t = uTime * 0.025;
+        vec2 p = uv; p.x *= aspect;               // aspect-correct space
 
-        vec2 px = uv; px.x *= aspect;             // aspect-correct space
-        vec2 mm = uMouse / uRes.xy; mm.x *= aspect;
+        // domain-warped fbm -> a soft, irregular organic blob
+        vec2 q = vec2(fbm(p * 1.0 + vec2(0.0, t)),
+                      fbm(p * 1.0 + vec2(3.2, 1.3) - t * 0.7));
+        float n = fbm(p * 1.15 + q * 1.5 + vec2(t * 0.3, -t * 0.2));
 
-        // cursor repulsion — lines bend AWAY from the cursor (sample pulled toward it)
-        vec2 d = px - mm;
-        float force = exp(-dot(d, d) * 32.0);   // ~half the influence radius
-        px -= d * force * 5.2;   // 0 at the cursor -> the lines curve away around it
+        // pure black, with only the top of the noise emerging as a faint white blob
+        float blob = smoothstep(0.55, 0.96, n);
 
-        // flowing rounded pipes that meander in every direction (undulating)
-        float warp  = fbm(px * 1.2 + vec2(t, -t * 0.5));
-        float warp2 = fbm(px * 0.7 + vec2(-t * 0.3, t * 0.4));
-        float field = px.x * 3.0 + px.y * 1.3 + (warp + warp2) * 4.0;
+        vec3 col = vec3(0.0);                      // true black
+        col += vec3(1.0) * blob * 0.11;           // faint white haze
+        col += vec3(1.0) * pow(blob, 2.6) * 0.07; // slightly brighter soft core
 
-        float g = fract(field);
-        float ridge = pow(max(sin(g * 3.14159265), 0.0), 1.9);
-
-        // dark, glossy charcoal pipes on near-black
-        vec3 base = vec3(0.010, 0.011, 0.014);
-        vec3 pipe = vec3(0.085, 0.090, 0.105);
-        vec3 col = mix(base, pipe, ridge);
-        col += (g - 0.5) * 0.03;                   // subtle emboss across each pipe
-        col += vec3(0.05, 0.052, 0.06) * pow(ridge, 7.0); // soft specular crest
-
-        // gentle vignette for depth
-        vec2 vd = uv - 0.5; vd.x *= aspect;
-        col *= 1.0 - dot(vd, vd) * 0.5;
-
-        // whisper of dither to avoid banding
-        col += (hash(frag) - 0.5) * 0.01;
+        // whisper of dither so the faint gradient never bands
+        col += (hash(frag) - 0.5) * 0.008;
 
         gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
       }`;
