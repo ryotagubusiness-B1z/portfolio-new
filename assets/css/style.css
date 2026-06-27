@@ -76,7 +76,7 @@ body.cur-hide .zcursor { opacity: 0; }
 @keyframes charUp { to { transform: translateY(0); } }
 .loader__count {
   position: absolute; right: var(--pad); bottom: calc(var(--pad) - .3rem);
-  font-family: "Zodiak", Georgia, serif;
+  font-family: "Tabular", "Courier New", monospace;
   font-size: clamp(2.6rem, 9vw, 6.4rem); font-weight: 700; letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
