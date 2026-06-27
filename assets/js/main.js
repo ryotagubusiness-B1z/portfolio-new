@@ -47,74 +47,39 @@
         vec2 uv = frag / uRes.xy;
         float aspect = uRes.x / uRes.y;
 
-        // ---- ripple as a radial PUSH of the particle field ----
-        // each drop nudges the fine grain outward in an expanding ring; the
-        // ripple is only visible through the displaced grain, never as glow.
-        vec2 push = vec2(0.0);
-        for (int i = 0; i < ${N}; i++) {
-          vec3 dp = uDrops[i];
-          if (dp.z < 0.0) continue;
-          vec2 rel = (frag - dp.xy) / uRes.y;      // aspect-correct, normalized by height
-          float r = length(rel);
-          float age = dp.z;
-          float front = age * 0.09;                // quarter-size expansion
-          float band = r - front;
-          // ease in slowly so a freshly-born ripple starts almost invisible
-          float fade = smoothstep(0.0, 0.55, age) * exp(-age * 1.4);
-          // bipolar wavelet -> particles bunch at the wavefront (a compression ring)
-          float ring = (-band) * exp(-band * band * 16000.0) * 300.0 * fade;
-          push += (rel / (r + 1e-4)) * ring;
-        }
-        push *= 0.004;                             // super-subtle ripple displacement
+        float t = uTime * 0.02;
 
-        // ---- attraction within a ~4cm radius around the cursor ----
-        vec2 m = uMouse / uRes.xy;
-        vec2 dM = uv - m; dM.x *= aspect;
-        float distM = length(dM);
-        // gaussian pull, used for the grain particles
-        float pull = exp(-(distM * distM) / (uRadius * uRadius));
-        vec2 attract = (uv - m) * pull * 0.5 * (0.55 + 0.45 * uStr);
+        vec2 px = uv; px.x *= aspect;             // aspect-correct space
+        vec2 mm = uMouse / uRes.xy; mm.x *= aspect;
 
-        // clean-edged circular mask: the SMOKE only responds inside the 4cm circle,
-        // and is left completely untouched outside it
-        float ring = 1.0 - smoothstep(uRadius * 0.72, uRadius, distM);
+        // cursor repulsion — the lines bend smoothly AROUND the cursor (no singularity)
+        vec2 d = px - mm;
+        float force = exp(-dot(d, d) * 8.0);
+        px += d * force * 2.6;   // 0 at the cursor, swells outward -> lines curve away
 
-        // refined response: the smoke slowly swirls + draws inward around the cursor
-        // (a gentle vortex for a premium, fluid feel)
-        vec2 rel = uv - m; rel.x *= aspect;
-        float ang = ring * (0.85 + 0.12 * sin(uTime * 0.5)); // soft, breathing vortex
-        float ca = cos(ang), sa = sin(ang);
-        vec2 rot = vec2(rel.x * ca - rel.y * sa, rel.x * sa + rel.y * ca);
-        rot.x /= aspect;
+        // flowing rounded pipes that gently undulate (premium, macOS-wallpaper feel)
+        float warp = fbm(px * 0.85 + vec2(t, -t * 0.5));
+        float field = px.x * 6.0 + warp * 2.6;
 
-        // ---- background: an irregular blob faintly emerging, made of particles ----
-        vec2 sp = (m + rot) + attract * ring * 0.4;   // cursor swirl + slight pull
-        float t = uTime * 0.05;
-        // irregular, slowly drifting blob — mostly black, only a little emerges
-        float bn = fbm(sp * 1.7 + vec2(t * 0.6, -t * 0.4));
-        float blob = smoothstep(0.42, 0.82, bn);
+        float g = fract(field);
+        float ridge = sin(g * 3.14159265);        // rounded ridge across each band
+        ridge = pow(max(ridge, 0.0), 1.9);
 
-        // the bright area is granular: fine particles, cursor displaces them
-        vec2 gp = frag + (push + attract) * uRes.y;
-        float ph = hash(floor(gp));                   // static per-pixel particle id (fine, 1px)
-        float tw = 0.5 + 0.5 * sin(uTime * 2.5 + ph * 6.2831); // smooth twinkle (no stepping/lag)
-        float pa = step(0.6, ph) * tw;                // sparse fine particles
+        // dark, glossy charcoal pipes on near-black
+        vec3 base = vec3(0.010, 0.011, 0.014);
+        vec3 pipe = vec3(0.085, 0.090, 0.105);
+        vec3 col = mix(base, pipe, ridge);
+        col += (g - 0.5) * 0.03;                   // subtle emboss across each pipe
+        col += vec3(0.05, 0.052, 0.06) * pow(ridge, 7.0); // soft specular crest
 
-        // ---- premium colour aurora (Apple-display wallpaper feel) ----
-        float fa = fbm(uv * 1.1 + vec2(t * 0.5, t * 0.25));
-        float fb = fbm(uv * 0.9 + vec2(-t * 0.35, t * 0.4));
-        vec3 cA = vec3(0.11, 0.15, 0.46);   // deep indigo
-        vec3 cB = vec3(0.40, 0.18, 0.55);   // violet
-        vec3 cC = vec3(0.09, 0.42, 0.55);   // teal
-        vec3 aurora = mix(cA, cB, smoothstep(0.25, 0.75, fa));
-        aurora = mix(aurora, cC, smoothstep(0.45, 0.90, fb));
+        // gentle vignette for depth
+        vec2 vd = uv - 0.5; vd.x *= aspect;
+        col *= 1.0 - dot(vd, vd) * 0.5;
 
-        float lum = blob * (0.05 + 0.95 * pa);        // particle brightness inside the blob
-        vec3 outc = vec3(0.012);                      // near-black base
-        outc += aurora * lum * 0.95;                  // coloured particles
-        outc += aurora * blob * 0.06;                 // faint ambient colour in the blob
+        // whisper of dither to avoid banding
+        col += (hash(frag) - 0.5) * 0.01;
 
-        gl_FragColor = vec4(clamp(outc, 0.0, 1.0), 1.0);
+        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
       }`;
 
     const compile = (type, src) => {
